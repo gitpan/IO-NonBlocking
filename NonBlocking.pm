@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.029';
+$VERSION = '1.035';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -116,6 +116,8 @@ sub start{
 	open(FILE,">".$self->piddir."/".$self->serverName) or die "Cannot write PID file: $!\n";
 	print FILE $$;
 	close(FILE);
+
+	$self->onServerInit;
 
 	while (1) {
 		my $client;
@@ -318,6 +320,9 @@ sub sendmsg{
         $outbuffer{$client}.=$msg.$self->{delimiter};
 }
 
+sub onServerInit {
+}
+
 sub onClientConnected{
 	my $self=shift;
 	my $client=shift;
@@ -482,6 +487,11 @@ To implement a server service from this module, you have to inherit from it, som
 	$obj->start;
 
 and then, you can implement some methods to your modules to handle events which are:
+
+        sub onServerInit {		# this method is called after socket initialization
+					# but before it goes to the listening mode
+					# to provide additional server initialization
+        }
 
 	sub onClientConnected{		# triggered when a client connect to server
 		my $self=shift;
