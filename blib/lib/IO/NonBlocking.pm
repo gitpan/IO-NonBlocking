@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.001';
+$VERSION = '1.010';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -357,7 +357,7 @@ __END__
 
 =head1 NAME
 
-	IO::NonBlocking - Object-oriented interface to non-blocking IO server implementation.
+IO::NonBlocking - Object-oriented interface to non-blocking IO server implementation.
 
 =head1 SYNOPSIS
 
