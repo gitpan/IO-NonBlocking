@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.021';
+$VERSION = '1.029';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -26,8 +26,6 @@ my %turn_timeout_trigger;
 my $select;
 my %idle;
 my %timer;
-my %ip;
-my %port;
 
 tie %ready, 'Tie::RefHash';
 
@@ -74,8 +72,6 @@ sub close_client {
 	delete $turn_timeout{$client};
 	delete $turn_timeout_trigger{$client};
 	delete $idle{$client};
-	delete $ip{$client};
-	delete $port{$client};
 	delete $inbuffer{$client};
 	delete $outbuffer{$client};
 	delete $ready{$client};
@@ -91,8 +87,6 @@ sub disconnect_client {
 	delete $turn_timeout{$client};
 	delete $turn_timeout_trigger{$client};
 	delete $idle{$client};
-	delete $ip{$client};
-	delete $port{$client};
 	delete $inbuffer{$client};
 	delete $outbuffer{$client};
 	delete $ready{$client};
@@ -175,12 +169,6 @@ sub start{
 				$client = $server->accept();
 				$select->add($client);
 				$self->nonblock($client);
-
-				my($port,$iip)=sockaddr_in($client->peername);
-				my $ip=inet_ntoa($iip);
-
-				$ip{$client}=$ip;
-				$port{$client}=$port;
 
 				$self->onClientConnected($client);
 				$idle{$client}=time;
@@ -296,12 +284,12 @@ sub handle {
 
 sub getip {
         my $self=shift;
-	$ip{$_[0]};
+	$_[0]->sockhost();
 }
 
 sub getport {
         my $self=shift;
-	$port{$_[0]};
+	$_[0]->sockport();
 }
 
 sub piddir{
@@ -378,12 +366,6 @@ sub add_socket {
 
 	$select->add($sock);
 	$self->nonblock($sock);
-
-	my($port,$iip)=sockaddr_in($sock->peername);
-	my $ip=inet_ntoa($iip);
-
-	$ip{$sock}=$ip;
-	$port{$sock}=$port;
 
 	$idle{$sock}=time;
 	$turn_timeout{$sock}=-1;	
