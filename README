@@ -23,13 +23,14 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires these other modules and libraries:
-
-  blah blah blah
+	IO::Select
+	Socket
+	Non-blockingable platform
+	Fcntl
 
 COPYRIGHT AND LICENCE
 
-Put the correct copyright and licence information here.
+Original by Komtanoo  Pinpimai
 
-Copyright (C) 2002 A. U. Thor blah blah blah
+Copyright (C) 2002 romerun@romerun.com
 

@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.010';
+$VERSION = '1.011';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -414,16 +414,15 @@ but when user increases, everything is slowed down.
 After that, I had tried many fruitless improvement to the module and 
 they didn't work at all. I'd realized that there weren't exist such a non-blocking server module on CPAN, after mining for many nights. 
 
-At last, I did copy a code from the Cook Book 
+At last, I did copy my core code from the CookBook 
 and it worked like charm at my first glance, nevertheless the code has some bugs 
-that make my server crash, however, I've fixed it and plused many useful features to decide to release it as a module to CPAN.
+that make my server crash, however, I've fixed it and added many useful features to decide to release it as a module to CPAN.
 
 =head2 Features
 
 =item Inheritance only
 
-the purpose of this module is for inheritance only, it cannot do such a static call
-
+the purpose of this module is for inheritance only, it cannot do such a static call, but you can override some callback functions to make it work.
 
 =item Timer
 
