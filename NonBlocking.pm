@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.020';
+$VERSION = '1.021';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -709,6 +709,10 @@ the hash referece comprise
 =item select
 
       return an object of IO::Select of the main module,
+
+=item nonblock ($socket)
+
+      make $socket non-block
 
 =head2 EXPORT
 
