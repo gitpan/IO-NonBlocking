@@ -10,7 +10,7 @@ use Fcntl;
 use Tie::RefHash;
 use vars qw($VERSION);
 
-$VERSION = '1.011';
+$VERSION = '1.020';
 
 my @now=localtime(time);
 my $cronCounter=$now[0]+60*$now[1]+3600*$now[2]+3600*24*$now[3];
@@ -42,9 +42,10 @@ sub new{
 
 	$self->{serverName}=$hash{'server_name'} || die("server_name is required");
 	$self->{port}=$hash{'port'} || die("port is required");
-	$self->{delimiter}=$hash{'delimiter'} || "\0";
-	$self->{timeout}=$hash{'timeout'} || 300;
-	$self->{piddir}=$hash{'piddir'} || '/tmp';
+	$self->{delimiter}=defined($hash{delimiter}) ? $hash{delimiter} : "\0";
+	$self->{string_format}=defined($hash{string_format}) ? $hash{string_format} : '.*?';
+	$self->{timeout}=defined($hash{timeout}) ? $hash{timeout} : 300;
+	$self->{piddir}=defined($hash{piddir}) ? $hash{piddir} : '/tmp';
 
 	bless $self,$class;
 }
@@ -64,6 +65,23 @@ sub stop_time {
 
 	$turn_timeout{$client}=-1;
 	delete($turn_timeout_trigger{$client});
+}
+
+sub close_client {
+	my $self=shift;
+	my $client=shift;
+
+	delete $turn_timeout{$client};
+	delete $turn_timeout_trigger{$client};
+	delete $idle{$client};
+	delete $ip{$client};
+	delete $port{$client};
+	delete $inbuffer{$client};
+	delete $outbuffer{$client};
+	delete $ready{$client};
+
+	$select->remove($client);
+	close $client if $client;
 }
 
 sub disconnect_client {
@@ -93,7 +111,7 @@ sub start{
 
 	my $server = IO::Socket::INET->new(	
 					LocalPort => $self->port,
-					Listen    => 10,
+					Listen    => 50,
 					Proto	=> 'tcp',
 					Reuse	=> 1)
 				  or die "Can't make server socket: $@\n";
@@ -186,7 +204,9 @@ sub start{
 				# to be fulfilled.  If there is, set $ready{$client}
 				# to the requests waiting to be fulfilled.
 				my $dm=$self->{delimiter};
-				while ($inbuffer{$client} =~ s/(.*?)$dm//s) {
+				my $sf=$self->{string_format};
+
+				while ($inbuffer{$client} =~ s/($sf)$dm//s) {
 					push( @{$ready{$client}}, $1 );
 				}
 
@@ -350,6 +370,29 @@ sub cron {
         my $self=shift;
 
 	$timer{$_[0]}=$_[1];
+}
+
+sub add_socket {
+	my $self=shift;
+	my $sock=shift;
+
+	$select->add($sock);
+	$self->nonblock($sock);
+
+	my($port,$iip)=sockaddr_in($sock->peername);
+	my $ip=inet_ntoa($iip);
+
+	$ip{$sock}=$ip;
+	$port{$sock}=$port;
+
+	$idle{$sock}=time;
+	$turn_timeout{$sock}=-1;	
+}
+
+sub select {
+	my $self=shift;
+
+	$select;
 }
 
 1;
@@ -531,6 +574,7 @@ The following parameters are all of the constructor.
 
 	'server_name'	for name of server, you shouldn't leave blank
 	'port'		the port where you want you server to reside in
+	'string_format' generally, string format is ".*?". If your message format is simple enough, do not set this parameter. In addition, when the module parses message, it executes something like this "while ($buffer =~ s/($string_format)$delimiter//) {" and throw $1 to onReceiveMessage.
 	'delimiter'	the delimiter of you message of you protocol default is "\0"
 	'timeout'	timeout in second as I've stated, default is 300 second
 	'piddir'	where pid file is kept, default is '/tmp' 
@@ -620,6 +664,10 @@ the hash referece comprise
 
 =item disconnect_client ($client)
 
+      Force, disconnect a client from server and call onClientDisconnected.
+
+=item close_client ($client)
+
       Force, disconnect a client from server.
 
 =item start ()
@@ -653,6 +701,14 @@ the hash referece comprise
 =item cron ($time,\&code)
 
       Install timer triggered function. see Usage.
+
+=item add_socket ($socket)
+
+      Add a socket to the main non-blocking loop. The socket will be affected to the idle machanism like a client.(I'm too lazy to make it an optional)
+
+=item select
+
+      return an object of IO::Select of the main module,
 
 =head2 EXPORT
 
